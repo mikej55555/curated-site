@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { ProjectCard, Project } from "@/app/components/ProjectCard";
 import { ProjectDetail } from "@/app/components/ProjectDetail";
-import { SubmitProjectDialog } from "@/app/components/SubmitProjectDialog";
 import Community from "@/app/Community";
 
 const initialProjects: Project[] = [
@@ -83,11 +82,14 @@ const initialProjects: Project[] = [
 export default function App() {
   const [activeView, setActiveView] = useState<"projects" | "community">("projects");
 
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  // Keep this as state in case you later load projects from Google Sheets
+  const [projects] = useState<Project[]>(initialProjects);
+
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [filterCategory, setFilterCategory] = useState<"all" | "architecture" | "landscape">("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const isCommunity = activeView === "community";
 
   const filteredProjects = projects.filter((project) => {
     const matchesCategory = filterCategory === "all" || project.category === filterCategory;
@@ -102,17 +104,6 @@ export default function App() {
 
     return matchesCategory && matchesSearch;
   });
-
-  const handleSubmitProject = (newProject: Omit<Project, "id">) => {
-    const project: Project = {
-      ...newProject,
-      id: Date.now().toString(),
-    };
-    setProjects([project, ...projects]);
-  };
-
-  // Optional: hide search/filter when viewing Community (keeps UI clean)
-  const isCommunity = activeView === "community";
 
   return (
     <div className="min-h-screen bg-white">
@@ -138,6 +129,7 @@ export default function App() {
                 >
                   Projects
                 </button>
+
                 <button
                   onClick={() => setActiveView("community")}
                   className={`px-4 py-2 tracking-wide uppercase transition-colors ${
@@ -150,6 +142,7 @@ export default function App() {
                 </button>
               </div>
 
+              {/* Search + Filter only on Projects */}
               {!isCommunity && (
                 <>
                   {/* Search Bar */}
@@ -197,19 +190,19 @@ export default function App() {
                       Landscape
                     </button>
                   </div>
-
-<a
-  href={import.meta.env.VITE_SUBMIT_FORM_URL}
-  target="_blank"
-  rel="noreferrer"
-  className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors tracking-wide uppercase text-sm"
->
-  <Plus className="w-5 h-5" />
-  Submit
-</a>
-
                 </>
               )}
+
+              {/* Submit always visible */}
+              <a
+                href={import.meta.env.VITE_SUBMIT_FORM_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors tracking-wide uppercase text-sm"
+              >
+                <Plus className="w-5 h-5" />
+                Submit
+              </a>
             </div>
           </div>
         </div>
@@ -223,7 +216,11 @@ export default function App() {
           <>
             <div className="space-y-20">
               {filteredProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} onClick={() => setSelectedProject(project)} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => setSelectedProject(project)}
+                />
               ))}
             </div>
 
@@ -252,13 +249,9 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Modals (Projects view only) */}
+      {/* Project modal */}
       {!isCommunity && selectedProject && (
         <ProjectDetail project={selectedProject} onClose={() => setSelectedProject(null)} />
-      )}
-
-      {!isCommunity && showSubmitDialog && (
-        <SubmitProjectDialog onClose={() => setShowSubmitDialog(false)} onSubmit={handleSubmitProject} />
       )}
     </div>
   );
