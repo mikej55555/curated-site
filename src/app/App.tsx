@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { ProjectCard, Project } from "@/app/components/ProjectCard";
 import { ProjectDetail } from "@/app/components/ProjectDetail";
-import Community from "@/app/Community";
+import Community from "@/Community";
 
 const initialProjects: Project[] = [
   {
