@@ -198,14 +198,16 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Submit Button */}
-                  <button
-                    onClick={() => setShowSubmitDialog(true)}
-                    className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors tracking-wide uppercase text-sm"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Submit
-                  </button>
+<a
+  href={import.meta.env.VITE_SUBMIT_FORM_URL}
+  target="_blank"
+  rel="noreferrer"
+  className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors tracking-wide uppercase text-sm"
+>
+  <Plus className="w-5 h-5" />
+  Submit
+</a>
+
                 </>
               )}
             </div>
