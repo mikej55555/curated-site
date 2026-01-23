@@ -8,9 +8,26 @@ import { SubmitProjectDialog } from "@/app/components/SubmitProjectDialog";
 
 const API_URL = import.meta.env.VITE_PROJECTS_API_URL as string | undefined;
 
-// Load projects from Google Sheets
+// Optional fallback projects if API is down.
+// You can leave this empty if you want.
+const initialProjects: Project[] = [
+  {
+    id: "1",
+    title: "Modern Villa",
+    description:
+      "A contemporary residential project that seamlessly blends indoor and outdoor spaces. The design emphasizes clean lines, open floor plans, and an abundance of natural light.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1519662978799-2f05096d3636?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+    architect: "Studio Architects",
+    location: "Los Angeles, USA",
+    category: "architecture",
+    websiteUrl: "https://example.com/modern-villa",
+    instagramUrl: "https://www.instagram.com/",
+  },
+];
+
 async function fetchProjects(): Promise<Project[]> {
-  if (!API_URL) return [];
+  if (!API_URL) return initialProjects;
 
   const res = await fetch(API_URL, { method: "GET" });
   if (!res.ok) throw new Error("Failed to load projects");
@@ -31,7 +48,6 @@ async function fetchProjects(): Promise<Project[]> {
   }));
 }
 
-// Submit a project to Google Sheets
 async function submitProject(newProject: Omit<Project, "id">): Promise<void> {
   if (!API_URL) throw new Error("Missing VITE_PROJECTS_API_URL");
 
@@ -47,90 +63,6 @@ async function submitProject(newProject: Omit<Project, "id">): Promise<void> {
   }
 }
 
-
-const STORAGE_KEY = "curated_projects_v1";
-
-const initialProjects: Project[] = [
-  {
-    id: "1",
-    title: "Modern Villa",
-    description:
-      "A contemporary residential project that seamlessly blends indoor and outdoor spaces. The design emphasizes clean lines, open floor plans, and an abundance of natural light. Large glass panels create a transparent boundary between the interior and the surrounding landscape.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519662978799-2f05096d3636?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Studio Architects",
-    location: "Los Angeles, USA",
-    category: "architecture",
-    projectUrl: "https://example.com/modern-villa",
-    instagramUrl: "https://instagram.com/",
-  },
-  {
-    id: "2",
-    title: "Urban Garden",
-    description:
-      "An innovative landscape design that transforms an urban rooftop into a verdant oasis. The project incorporates sustainable water management, native plantings, and creates peaceful spaces for reflection and community gathering in the heart of the city.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1642833465562-f81525657851?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Green Space Design",
-    location: "Copenhagen, Denmark",
-    category: "landscape",
-    projectUrl: "https://example.com/urban-garden",
-    instagramUrl: "https://instagram.com/",
-  },
-  {
-    id: "3",
-    title: "Minimalist Residence",
-    description:
-      "A study in simplicity and restraint, this residence showcases the beauty of minimal design. Every element serves a purpose, creating spaces that are both functional and serene. The neutral palette and careful material selection emphasize form and light.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1602128110234-2d11c0aaadfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Minimal Studio",
-    location: "Tokyo, Japan",
-    category: "architecture",
-    projectUrl: "https://example.com/minimalist-residence",
-    instagramUrl: "https://instagram.com/",
-  },
-  {
-    id: "4",
-    title: "Contemporary Tower",
-    description:
-      "A striking addition to the urban skyline, this tower redefines modern office space. The facade features a dynamic interplay of glass and metal, while interior spaces prioritize flexibility, sustainability, and occupant wellbeing.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1695067440629-b5e513976100?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Tower Architects",
-    location: "Singapore",
-    category: "architecture",
-    projectUrl: "https://example.com/contemporary-tower",
-    instagramUrl: "https://instagram.com/",
-  },
-  {
-    id: "5",
-    title: "Urban Plaza",
-    description:
-      "A vibrant public space that serves as a gathering point for the community. The design balances hardscape and softscape elements, creating flexible zones for events, leisure, and circulation while incorporating art installations and sustainable features.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1548566862-2c9b1fed780a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Urban Design Collective",
-    location: "Barcelona, Spain",
-    category: "landscape",
-    projectUrl: "https://example.com/urban-plaza",
-    instagramUrl: "https://instagram.com/",
-  },
-  {
-    id: "6",
-    title: "Botanical Garden",
-    description:
-      "A thoughtfully curated collection of native and exotic plantings organized to create distinct spatial experiences. The design weaves together pathways, water features, and seating areas, inviting visitors to explore and connect with nature.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1681465766418-6474cfdcbb3c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    architect: "Landscape Atelier",
-    location: "Melbourne, Australia",
-    category: "landscape",
-    projectUrl: "https://example.com/botanical-garden",
-    instagramUrl: "https://instagram.com/",
-  },
-];
-
 export default function App() {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -139,11 +71,32 @@ export default function App() {
     "all" | "architecture" | "landscape"
   >("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Load saved projects (optional, but recommended)
+  // Load projects from Google Sheets API
+  useEffect(() => {
+    let cancelled = false;
 
-  // Save projects (optional)
- 
+    (async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+        const loaded = await fetchProjects();
+        if (!cancelled) setProjects(loaded);
+      } catch (e: any) {
+        if (!cancelled) setLoadError(e?.message || "Failed to load projects");
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
       const matchesCategory =
@@ -161,9 +114,21 @@ export default function App() {
     });
   }, [projects, filterCategory, searchQuery]);
 
-  const handleSubmitProject = (newProject: Omit<Project, "id">) => {
-    const project: Project = { ...newProject, id: Date.now().toString() };
-    setProjects([project, ...projects]);
+  const handleSubmitProject = async (newProject: Omit<Project, "id">) => {
+    // Optimistic UI: show immediately
+    const optimistic: Project = { ...newProject, id: Date.now().toString() };
+    setProjects((prev) => [optimistic, ...prev]);
+
+    try {
+      await submitProject(newProject);
+      // Reload from the sheet so it matches what everyone sees
+      const loaded = await fetchProjects();
+      setProjects(loaded);
+    } catch (e: any) {
+      // Rollback optimistic item
+      setProjects((prev) => prev.filter((p) => p.id !== optimistic.id));
+      alert(e?.message || "Submit failed");
+    }
   };
 
   return (
@@ -242,6 +207,27 @@ export default function App() {
       {/* Main Content */}
       <main className="py-16">
         <div className="max-w-[1600px] mx-auto px-6">
+          {loading && (
+            <div className="py-6">
+              <p className="text-neutral-400 tracking-wide uppercase text-xs">
+                Loading projects…
+              </p>
+            </div>
+          )}
+
+          {loadError && (
+            <div className="py-6">
+              <p className="text-red-600 text-sm">
+                Could not load projects: {loadError}
+              </p>
+              <p className="text-xs text-neutral-500 mt-2">
+                Check Netlify environment variable{" "}
+                <code className="px-1 border">VITE_PROJECTS_API_URL</code> is set
+                to your Apps Script Web App URL (ending in <code>/exec</code>).
+              </p>
+            </div>
+          )}
+
           <div className="space-y-20">
             {filteredProjects.map((project) => (
               <ProjectCard
@@ -252,7 +238,7 @@ export default function App() {
             ))}
           </div>
 
-          {filteredProjects.length === 0 && (
+          {!loading && filteredProjects.length === 0 && (
             <div className="text-center py-20">
               <p className="text-neutral-400 tracking-wide uppercase">
                 No projects found
