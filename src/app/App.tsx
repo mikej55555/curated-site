@@ -6,6 +6,48 @@ import { ProjectCard, Project } from "@/app/components/ProjectCard";
 import { ProjectDetail } from "@/app/components/ProjectDetail";
 import { SubmitProjectDialog } from "@/app/components/SubmitProjectDialog";
 
+const API_URL = import.meta.env.VITE_PROJECTS_API_URL as string | undefined;
+
+// Load projects from Google Sheets
+async function fetchProjects(): Promise<Project[]> {
+  if (!API_URL) return [];
+
+  const res = await fetch(API_URL, { method: "GET" });
+  if (!res.ok) throw new Error("Failed to load projects");
+
+  const data = await res.json();
+  const projects = Array.isArray(data.projects) ? data.projects : [];
+
+  return projects.map((p: any) => ({
+    id: String(p.id || ""),
+    title: String(p.title || ""),
+    description: String(p.description || ""),
+    category: p.category === "landscape" ? "landscape" : "architecture",
+    architect: p.architect ? String(p.architect) : undefined,
+    location: p.location ? String(p.location) : undefined,
+    imageUrl: p.imageUrl ? String(p.imageUrl) : undefined,
+    instagramUrl: p.instagramUrl ? String(p.instagramUrl) : undefined,
+    websiteUrl: p.websiteUrl ? String(p.websiteUrl) : undefined,
+  }));
+}
+
+// Submit a project to Google Sheets
+async function submitProject(newProject: Omit<Project, "id">): Promise<void> {
+  if (!API_URL) throw new Error("Missing VITE_PROJECTS_API_URL");
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newProject),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.error || "Submit failed");
+  }
+}
+
+
 const STORAGE_KEY = "curated_projects_v1";
 
 const initialProjects: Project[] = [
@@ -99,26 +141,9 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Load saved projects (optional, but recommended)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Project[];
-      if (Array.isArray(parsed) && parsed.length) setProjects(parsed);
-    } catch {
-      // ignore
-    }
-  }, []);
 
   // Save projects (optional)
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-    } catch {
-      // ignore
-    }
-  }, [projects]);
-
+ 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
       const matchesCategory =
