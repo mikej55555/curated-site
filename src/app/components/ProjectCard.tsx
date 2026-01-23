@@ -72,9 +72,7 @@ export function ProjectCard({
                 {project.category}
               </p>
 
-              <h2 className="text-3xl mt-3 tracking-tight">
-                {project.title}
-              </h2>
+              <h2 className="text-3xl mt-3 tracking-tight">{project.title}</h2>
 
               <div className="mt-4 text-sm text-neutral-600 space-y-1">
                 {project.architect && <div>{project.architect}</div>}
