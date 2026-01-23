@@ -10,11 +10,9 @@ export async function handler(event) {
   }
 
   try {
-    // GET -> list projects
     if (event.httpMethod === "GET") {
-      const r = await fetch(API_URL, { method: "GET" });
+      const r = await fetch(API_URL);
       const text = await r.text();
-
       return {
         statusCode: r.status,
         headers: {
@@ -25,16 +23,13 @@ export async function handler(event) {
       };
     }
 
-    // POST -> add project
     if (event.httpMethod === "POST") {
       const r = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: event.body || "{}",
       });
-
       const text = await r.text();
-
       return {
         statusCode: r.status,
         headers: {
@@ -56,7 +51,7 @@ export async function handler(event) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ok: false,
-        error: "Proxy fetch failed",
+        error: "Proxy error",
         detail: String(err?.message || err),
       }),
     };
