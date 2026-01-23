@@ -1,5 +1,3 @@
-import { ExternalLink, Instagram } from "lucide-react";
-
 export type Project = {
   id: string;
   title: string;
@@ -8,19 +6,7 @@ export type Project = {
   architect?: string;
   location?: string;
   category: "architecture" | "landscape";
-  projectUrl?: string;
-  instagramUrl?: string;
 };
-
-function safeUrl(url?: string) {
-  if (!url) return undefined;
-  try {
-    const u = new URL(url);
-    return u.toString();
-  } catch {
-    return undefined;
-  }
-}
 
 export function ProjectCard({
   project,
@@ -29,9 +15,6 @@ export function ProjectCard({
   project: Project;
   onClick: () => void;
 }) {
-  const projectUrl = safeUrl(project.projectUrl);
-  const instagramUrl = safeUrl(project.instagramUrl);
-
   return (
     <article
       className="group cursor-pointer"
@@ -53,47 +36,18 @@ export function ProjectCard({
 
         {/* Text */}
         <div className="pt-2">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <p className="text-xs tracking-[0.25em] uppercase text-neutral-500">
-                {project.category}
-              </p>
-              <h2 className="text-3xl mt-3 tracking-tight">{project.title}</h2>
+          <div>
+            <p className="text-xs tracking-[0.25em] uppercase text-neutral-500">
+              {project.category}
+            </p>
 
-              <div className="mt-4 text-sm text-neutral-600 space-y-1">
-                {project.architect && <div>{project.architect}</div>}
-                {project.location && <div>{project.location}</div>}
-              </div>
-            </div>
+            <h2 className="text-3xl mt-3 tracking-tight">
+              {project.title}
+            </h2>
 
-            {/* Links (don’t trigger card click) */}
-            <div className="flex items-center gap-2">
-              {projectUrl && (
-                <a
-                  href={projectUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-300 hover:bg-neutral-50 transition-colors text-xs uppercase tracking-wider"
-                  aria-label="Open project website"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Website
-                </a>
-              )}
-              {instagramUrl && (
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-300 hover:bg-neutral-50 transition-colors text-xs uppercase tracking-wider"
-                  aria-label="Open Instagram"
-                >
-                  <Instagram className="w-4 h-4" />
-                  Instagram
-                </a>
-              )}
+            <div className="mt-4 text-sm text-neutral-600 space-y-1">
+              {project.architect && <div>{project.architect}</div>}
+              {project.location && <div>{project.location}</div>}
             </div>
           </div>
 
