@@ -6,7 +6,7 @@ export type Project = {
   architect?: string;
   location?: string;
   category: "architecture" | "landscape";
-  instagramUrl?: string;
+  instagramUrl?: string; // used for embed
 };
 
 function safeUrl(url?: string) {
