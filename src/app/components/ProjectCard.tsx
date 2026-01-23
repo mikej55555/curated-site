@@ -6,6 +6,7 @@ export type Project = {
   architect?: string;
   location?: string;
   category: "architecture" | "landscape";
+  instagramUrl?: string;            // ← allow instagram link
 };
 
 export function ProjectCard({
