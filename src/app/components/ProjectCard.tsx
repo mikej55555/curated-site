@@ -6,11 +6,12 @@ export type Project = {
   id: string;
   title: string;
   description: string;
-  imageUrl?: string; // optional
+  imageUrl?: string;        // optional
+  instagramUrl?: string;    // optional (embed uses this)
+  websiteUrl?: string;      // optional (simple link)
   architect?: string;
   location?: string;
   category: "architecture" | "landscape";
-  instagramUrl?: string; // used for embed
 };
 
 export function ProjectCard({
