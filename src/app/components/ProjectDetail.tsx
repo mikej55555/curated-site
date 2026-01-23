@@ -1,99 +1,88 @@
-import { X } from "lucide-react";
-import { useEffect } from "react";
-import { Project } from "@/app/components/ProjectCard";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+import { X, ExternalLink, Instagram } from "lucide-react";
+import type { Project } from "./ProjectCard";
 
-interface ProjectDetailProps {
-  project: Project;
-  onClose: () => void;
+function safeUrl(url?: string) {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    return u.toString();
+  } catch {
+    return undefined;
+  }
 }
 
-export function ProjectDetail({ project, onClose }: ProjectDetailProps) {
-  useEffect(() => {
-    // Load Instagram embed script if there's an Instagram URL
-    if (project.instagramUrl && !window.instgrm) {
-      const script = document.createElement('script');
-      script.src = 'https://www.instagram.com/embed.js';
-      script.async = true;
-      document.body.appendChild(script);
-    } else if (project.instagramUrl && window.instgrm) {
-      window.instgrm.Embeds.process();
-    }
-  }, [project.instagramUrl]);
+export function ProjectDetail({
+  project,
+  onClose,
+}: {
+  project: Project;
+  onClose: () => void;
+}) {
+  const projectUrl = safeUrl(project.projectUrl);
+  const instagramUrl = safeUrl(project.instagramUrl);
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-auto">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <button
-          onClick={onClose}
-          className="fixed top-6 right-6 p-2 hover:bg-neutral-100 rounded-full transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-6 h-6" />
-        </button>
-
-        <div className="mt-16 space-y-8">
-          {project.instagramUrl ? (
-            <div className="flex justify-center">
-              <blockquote
-                className="instagram-media"
-                data-instgrm-permalink={project.instagramUrl}
-                data-instgrm-version="14"
-                style={{
-                  background: '#FFF',
-                  border: '0',
-                  borderRadius: '3px',
-                  boxShadow: '0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15)',
-                  margin: '1px',
-                  maxWidth: '658px',
-                  minWidth: '326px',
-                  padding: '0',
-                  width: 'calc(100% - 2px)',
-                }}
-              />
-            </div>
-          ) : project.linkedinUrl ? (
-            <div className="flex justify-center">
-              <iframe
-                src={`https://www.linkedin.com/embed/feed/update/${project.linkedinUrl.includes('urn:li:') ? project.linkedinUrl : 'urn:li:share:' + project.linkedinUrl.split('/').pop()}`}
-                height="700"
-                width="504"
-                frameBorder="0"
-                allowFullScreen
-                title="Embedded LinkedIn post"
-                style={{
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  borderRadius: '8px',
-                }}
-              />
-            </div>
-          ) : (
-            <div className="aspect-[16/10] overflow-hidden bg-neutral-100">
-              <ImageWithFallback
-                src={project.imageUrl || ''}
-                alt={project.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          <div className="max-w-2xl space-y-4">
-            <div>
-              <h1 className="text-3xl tracking-wide uppercase mb-2">{project.title}</h1>
-              {project.architect && (
-                <p className="text-lg text-neutral-600">{project.architect}</p>
-              )}
-              {project.location && (
-                <p className="text-sm text-neutral-400 mt-1">{project.location}</p>
-              )}
-            </div>
-
-            <div className="border-t border-neutral-200 pt-4">
-              <p className="text-neutral-700 leading-relaxed">{project.description}</p>
-            </div>
-
-            <div className="text-xs text-neutral-400 uppercase tracking-wider">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
+      <div className="bg-white w-full max-w-5xl max-h-[90vh] overflow-auto border border-neutral-200">
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div>
+            <p className="text-xs tracking-[0.25em] uppercase text-neutral-500">
               {project.category}
+            </p>
+            <h3 className="text-2xl mt-2">{project.title}</h3>
+            <div className="mt-2 text-sm text-neutral-600">
+              {[project.architect, project.location].filter(Boolean).join(" • ")}
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-neutral-50 border border-neutral-200"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-neutral-100 overflow-hidden">
+            <img
+              src={project.imageUrl}
+              alt={project.title}
+              className="w-full h-[520px] object-cover"
+            />
+          </div>
+
+          <div>
+            <p className="text-neutral-700 leading-relaxed">{project.description}</p>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {projectUrl && (
+                <a
+                  href={projectUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors text-sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Visit website
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 hover:bg-neutral-50 transition-colors text-sm"
+                >
+                  <Instagram className="w-4 h-4" />
+                  View Instagram
+                </a>
+              )}
+            </div>
+
+            <div className="mt-10 text-xs text-neutral-400 tracking-wider">
+              Tip: keep Instagram URLs as full links (e.g. https://instagram.com/yourhandle)
             </div>
           </div>
         </div>
