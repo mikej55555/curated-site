@@ -6,7 +6,7 @@ import { ProjectCard, Project } from "@/app/components/ProjectCard";
 import { ProjectDetail } from "@/app/components/ProjectDetail";
 import { SubmitProjectDialog } from "@/app/components/SubmitProjectDialog";
 
-const API_URL = import.meta.env.VITE_PROJECTS_API_URL as string | undefined;
+const API_URL = "/.netlify/functions/projects";
 
 // Optional fallback projects if API is down.
 // You can leave this empty if you want.
@@ -27,13 +27,21 @@ const initialProjects: Project[] = [
 ];
 
 async function fetchProjects(): Promise<Project[]> {
-  if (!API_URL) return initialProjects;
-
   const res = await fetch(API_URL, { method: "GET" });
-  if (!res.ok) throw new Error("Failed to load projects");
 
-  const data = await res.json();
-  const projects = Array.isArray(data.projects) ? data.projects : [];
+  // If the function isn't deployed or errors, you will see a non-200 here
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Failed to load projects (${res.status}). ${text || "Check function deployment."}`
+    );
+  }
+
+  const data = await res.json().catch(() => ({}));
+  const projects = Array.isArray((data as any).projects) ? (data as any).projects : [];
+
+  // If API returns empty for any reason, you can optionally fall back
+  if (!projects.length) return [];
 
   return projects.map((p: any) => ({
     id: String(p.id || ""),
@@ -49,17 +57,18 @@ async function fetchProjects(): Promise<Project[]> {
 }
 
 async function submitProject(newProject: Omit<Project, "id">): Promise<void> {
-  if (!API_URL) throw new Error("Missing VITE_PROJECTS_API_URL");
-
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" }, // same-origin -> OK
     body: JSON.stringify(newProject),
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) {
-    throw new Error(data.error || "Submit failed");
+
+  if (!res.ok || (data as any).ok === false) {
+    throw new Error(
+      (data as any).error || `Submit failed (${res.status}). Check function logs/env var.`
+    );
   }
 }
 
@@ -74,7 +83,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Load projects from Google Sheets API
+  // Load projects from Netlify Function (which proxies Google Sheets)
   useEffect(() => {
     let cancelled = false;
 
@@ -83,7 +92,10 @@ export default function App() {
         setLoading(true);
         setLoadError(null);
         const loaded = await fetchProjects();
-        if (!cancelled) setProjects(loaded);
+        if (!cancelled) {
+          // If sheet has content, use it; otherwise keep fallback initialProjects
+          setProjects(loaded.length ? loaded : initialProjects);
+        }
       } catch (e: any) {
         if (!cancelled) setLoadError(e?.message || "Failed to load projects");
         console.error(e);
@@ -121,9 +133,9 @@ export default function App() {
 
     try {
       await submitProject(newProject);
-      // Reload from the sheet so it matches what everyone sees
+      // Reload so it matches what everyone sees
       const loaded = await fetchProjects();
-      setProjects(loaded);
+      setProjects(loaded.length ? loaded : initialProjects);
     } catch (e: any) {
       // Rollback optimistic item
       setProjects((prev) => prev.filter((p) => p.id !== optimistic.id));
@@ -217,14 +229,25 @@ export default function App() {
 
           {loadError && (
             <div className="py-6">
-              <p className="text-red-600 text-sm">
-                Could not load projects: {loadError}
-              </p>
-              <p className="text-xs text-neutral-500 mt-2">
-                Check Netlify environment variable{" "}
-                <code className="px-1 border">VITE_PROJECTS_API_URL</code> is set
-                to your Apps Script Web App URL (ending in <code>/exec</code>).
-              </p>
+              <p className="text-red-600 text-sm">Could not load projects:</p>
+              <p className="text-red-600 text-sm">{loadError}</p>
+
+              <div className="mt-3 text-xs text-neutral-600 space-y-1">
+                <div>
+                  Check your Netlify Function URL works:
+                  <code className="ml-2 px-1 border">
+                    /.netlify/functions/projects
+                  </code>
+                </div>
+                <div>
+                  In Netlify env vars, you must set:
+                  <code className="ml-2 px-1 border">PROJECTS_API_URL</code>{" "}
+                  (Apps Script URL ending in <code>/exec</code>)
+                </div>
+                <div>
+                  Then redeploy: <b>Trigger deploy → Clear cache and deploy</b>
+                </div>
+              </div>
             </div>
           )}
 
