@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 declare global {
   interface Window {
@@ -13,18 +13,12 @@ declare global {
 }
 
 export function InstagramEmbed({ url }: { url: string }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
-    // Load script once
+    const process = () => window.instgrm?.Embeds?.process?.();
+
     const existing = document.querySelector(
       'script[src="https://www.instagram.com/embed.js"]'
     ) as HTMLScriptElement | null;
-
-    const process = () => {
-      // Ask Instagram to process new embeds
-      window.instgrm?.Embeds?.process?.();
-    };
 
     if (existing) {
       process();
@@ -39,12 +33,12 @@ export function InstagramEmbed({ url }: { url: string }) {
   }, []);
 
   useEffect(() => {
-    // Re-process whenever url changes (e.g. newly submitted projects)
+    // Re-run processing for new embeds (newly submitted posts)
     window.instgrm?.Embeds?.process?.();
   }, [url]);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div className="w-full">
       <blockquote
         className="instagram-media"
         data-instgrm-permalink={url}
